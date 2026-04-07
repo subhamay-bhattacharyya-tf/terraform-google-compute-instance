@@ -1,23 +1,38 @@
 # ============================================================================
-# GCS Bucket Module - Main
-# Creates and manages a Google Cloud Storage bucket.
+# Compute Instance Module - Main
+# Creates and manages a Google Compute Instance.
 # ============================================================================
 
-resource "google_storage_bucket" "this" {
-  name                        = var.bucket_name
-  project                     = var.project_id
-  location                    = var.location
-  storage_class               = upper(var.storage_class)
-  force_destroy               = var.force_destroy
-  uniform_bucket_level_access = true
-  public_access_prevention    = "enforced"
+resource "google_compute_instance" "this" {
+  name         = local.instance_name
+  machine_type = var.compute_instance_config.machine_type
+  zone         = var.compute_instance_config.zone
 
-  labels = merge(var.labels, {
-    project     = var.project
-    environment = var.environment
-  })
+  tags   = var.compute_instance_config.tags
+  labels = var.compute_instance_config.labels
 
-  versioning {
-    enabled = var.versioning
+  deletion_protection       = var.compute_instance_config.deletion_protection
+  allow_stopping_for_update = var.compute_instance_config.allow_stopping_for_update
+
+  boot_disk {
+    initialize_params {
+      image = var.compute_instance_config.boot_disk.image
+      size  = var.compute_instance_config.boot_disk.size
+      type  = var.compute_instance_config.boot_disk.type
+    }
   }
+
+  network_interface {
+    network    = var.compute_instance_config.network_interface.network
+    subnetwork = var.compute_instance_config.network_interface.subnetwork
+
+    # Public IP — only assigned when assign_public_ip is true
+    dynamic "access_config" {
+      for_each = var.compute_instance_config.network_interface.assign_public_ip ? [1] : []
+      content {}
+    }
+  }
+
+  # Metadata (startup-script, ssh-keys, etc.) — only when non-empty
+  metadata = length(var.compute_instance_config.metadata) > 0 ? var.compute_instance_config.metadata : null
 }

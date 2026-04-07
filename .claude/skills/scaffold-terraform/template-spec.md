@@ -2,39 +2,73 @@
 
 Generate these files in the `/` directory:
 
-**main.tf:**
+**main.tf:** _(delegate to `tf-mod-main` skill)_
 
-- GCS bucket using the `terraform-google-module-template` module (source: `github.com/subhamay-bhattacharyya-tf/terraform-google-module-template`)
-- Pass a `gcs_config` object with:
-  - `bucket_name`: from variable
-  - `project_id`: from variable
-  - `location`: from variable (default `"US"`)
-  - `storage_class`: from variable (default `"STANDARD"`)
-  - `force_destroy`: from variable (default `false`)
-  - `uniform_bucket_level_access`: `true`
-  - `public_access_prevention`: `"enforced"`
-  - `versioning`: from variable (default `false`)
-  - `labels`: map including `project` and `environment` variables
+- Google Compute Instance using the `google_compute_instance` resource
+- Follow the GCP provider reference and core authoring patterns from the `tf-mod-main` skill
 
-**variables.tf:**
+**locals.tf:**
 
-- Variables for: GCS Configuration (gcs_config) which is an object type variable
+A map type variable must be created from the input variable and the instance name must be in the following format:
+
+```text
+<project_code>-<base_name>-<zone>-<environment>
+```
+
+**variables.tf:** _(delegate to `tf-mod-vars` skill)_
+
+Use the `tf-mod-vars` skill to author this file. Apply the GCP provider reference and validation patterns. The variable schema is:
+
+| Variable | Type | Required | Notes |
+| --- | --- | --- | --- |
+| `environment` | `string` | Yes | One of: `devl`, `test`, `prod` |
+| `project_code` | `string` | Yes | Short identifier for naming standardization |
+| `region` | `string` | No | Default: `us-central1` |
+| `compute_instance_config` | `object` | Yes | See attribute table below |
+
+`compute_instance_config` attributes:
+
+| Attribute | Type | Required | Default | Validation |
+| --- | --- | --- | --- | --- |
+| `base_name` | `string` | Yes | — | Alphanumeric or dashes, max length ≤ 30 |
+| `machine_type` | `string` | No | `e2-micro` | Valid GCP machine type (e.g. `e2-micro`, `n1-standard-2`) |
+| `zone` | `string` | No | `us-central1-a` | Valid GCP zone format `<region>-[a-f]` |
+| `boot_disk` | `object` | No | `{}` | See boot_disk sub-attributes below |
+| `network_interface` | `object` | No | `{}` | See network_interface sub-attributes below |
+| `labels` | `map(string)` | No | `{}` | Lowercase keys and values |
+| `metadata` | `map(string)` | No | `{}` | Instance metadata key/value pairs |
+| `tags` | `list(string)` | No | `[]` | Network tags for firewall rules |
+| `deletion_protection` | `bool` | No | `false` | Prevent accidental deletion |
+| `allow_stopping_for_update` | `bool` | No | `true` | Allow instance stop for in-place updates |
+
+`boot_disk` sub-attributes:
+
+| Attribute | Type | Required | Default |
+| --- | --- | --- | --- |
+| `image` | `string` | No | `debian-cloud/debian-11` |
+| `size` | `number` | No | `10` |
+| `type` | `string` | No | `pd-standard` |
+
+`network_interface` sub-attributes:
+
+| Attribute | Type | Required | Default |
+| --- | --- | --- | --- |
+| `network` | `string` | No | `default` |
+| `subnetwork` | `string` | No | `null` |
+| `assign_public_ip` | `bool` | No | `false` |
 
 **outputs.tf:**
 
-- Outputs for all standard GCS bucket attributes:
-  - `bucket_id`
-  - `bucket_name`
-  - `bucket_project`
-  - `bucket_location`
-  - `bucket_url`
-  - `bucket_self_link`
-  - `bucket_storage_class`
-  - `bucket_force_destroy`
+- Outputs for all standard Google Compute Instance attributes:
+  - `instance_id`
+  - `instance_name`
+  - `self_link`
+  - `instance_ip`
+
 
 **versions.tf:**
 
-- Versions.tf should be in the following format 
+- Versions.tf should be in the following format
 
 ```hcl
 
@@ -54,15 +88,17 @@ provider "google" {
 }
 ```
 
-**examples/:**
+**examples/:** _(delegate to `tf-mod-examples` skill)_
 
-- `examples/bucket/basic/` with a main.tf that references the root module and passes example values for all variables. This should be a working example that can be validated separately from the root module.
+Use the `tf-mod-examples` skill to scaffold the full example matrix. Each example must be a self-contained, independently validatable Terraform configuration under `examples/<name>/` with its own `main.tf`, `variables.tf`, `terraform.tfvars`, and `README.md`.
 
 **test/:**
 
-This folder should contain the test cases for the module. The test cases should be written in Go and should use the Terratest framework. The test cases should be able to create a real GCS bucket, assert the outputs, and destroy the bucket after the test is done.
+- `test/compute_instance_basic_test.go`: This Terratest tests the basic compute instance configuration.
 
 **package.json:**
+
+- `github/workflows/ci.yaml`: This is the CI Pipeline. Add all the tests in the terratest job.
 
 Ensure the name is always the repository name.
 
@@ -74,6 +110,12 @@ Ensure the name is always the repository name.
 
 Ensure in the CONTRIBUTING.md, Reporting Issues must always links to the current repository.
 
-**README.md:**
+**README.md:** _(delegate to `tf-mod-readme` skill)_
 
-The custom endpoint batch should always point to the `current repository`.json.
+Use the `tf-mod-readme` skill to generate this file. The skill will:
+
+- Auto-resolve the repository name from the current git root
+- Check and create the gist badge file if missing
+- Populate all badge URLs pointing to the current repository
+- Produce terraform-docs-compatible inputs/outputs tables
+- Follow markdownlint rules (MD060 table column style)

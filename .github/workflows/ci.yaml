@@ -69,7 +69,18 @@ jobs:
     strategy:
       matrix:
         example:
-          - examples/bucket/basic
+          - examples/compute_instance/basic
+          - examples/compute_instance/with-ssd
+          - examples/compute_instance/with-public-ip
+          - examples/compute_instance/with-custom-image
+          - examples/compute_instance/with-container-optimized
+          - examples/compute_instance/with-n1-standard
+          - examples/compute_instance/with-n2-standard
+          - examples/compute_instance/with-tags
+          - examples/compute_instance/with-labels
+          - examples/compute_instance/with-metadata
+          - examples/compute_instance/with-deletion-protection
+          - examples/compute_instance/complete
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -129,13 +140,13 @@ jobs:
           go mod download
         working-directory: test
 
-      - name: Run Terratest - GCS Bucket Basic
-        id: gcs-bucket-basic-test
+      - name: Run Terratest - Compute Instance Basic
+        id: compute-instance-basic-test
         run: |
           set -o pipefail
-          go test -v -timeout 30m -run TestGCSBucketBasic \
-            ./gcs_bucket_basic_test.go ./helpers_test.go 2>&1 | tee test_output.txt
-          echo "## GCS Bucket Basic Test Results" >> $GITHUB_STEP_SUMMARY
+          go test -v -timeout 30m -run TestComputeInstanceBasic \
+            ./compute_instance_basic_test.go ./helpers_test.go 2>&1 | tee test_output.txt
+          echo "## Compute Instance Basic Test Results" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           cat test_output.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY

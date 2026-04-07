@@ -1,81 +1,193 @@
-# Terraform Module for GCS Bucket
+# terraform-google-compute-instance
 
-![Release](https://github.com/subhamay-bhattacharyya-tf/terraform-google-module-template/actions/workflows/ci.yaml/badge.svg)&nbsp;![GCP](https://img.shields.io/badge/GCP-4285F4?logo=googlecloud&logoColor=white)&nbsp;![Commit Activity](https://img.shields.io/github/commit-activity/t/subhamay-bhattacharyya-tf/terraform-google-module-template)&nbsp;![Last Commit](https://img.shields.io/github/last-commit/subhamay-bhattacharyya-tf/terraform-google-module-template)&nbsp;![Release Date](https://img.shields.io/github/release-date/subhamay-bhattacharyya-tf/terraform-google-module-template)&nbsp;![Repo Size](https://img.shields.io/github/repo-size/subhamay-bhattacharyya-tf/terraform-google-module-template)&nbsp;![File Count](https://img.shields.io/github/directory-file-count/subhamay-bhattacharyya-tf/terraform-google-module-template)&nbsp;![Issues](https://img.shields.io/github/issues/subhamay-bhattacharyya-tf/terraform-google-module-template)&nbsp;![Top Language](https://img.shields.io/github/languages/top/subhamay-bhattacharyya-tf/terraform-google-module-template)&nbsp;![Built with Claude Code](https://img.shields.io/badge/Built%20with-Claude%20Code-623CE4?logo=anthropic&logoColor=white)&nbsp;![Custom Endpoint](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/bsubhamay/476e6e7583432e960e6de16d5223e6a3/raw/terraform-google-module-template.json?)
+![Release](https://github.com/subhamay-bhattacharyya-tf/terraform-google-compute-instance/actions/workflows/ci.yaml/badge.svg)&nbsp;![GCP](https://img.shields.io/badge/GCP-4285F4?logo=googlecloud&logoColor=white)&nbsp;![Commit Activity](https://img.shields.io/github/commit-activity/t/subhamay-bhattacharyya-tf/terraform-google-compute-instance)&nbsp;![Last Commit](https://img.shields.io/github/last-commit/subhamay-bhattacharyya-tf/terraform-google-compute-instance)&nbsp;![Release Date](https://img.shields.io/github/release-date/subhamay-bhattacharyya-tf/terraform-google-compute-instance)&nbsp;![Repo Size](https://img.shields.io/github/repo-size/subhamay-bhattacharyya-tf/terraform-google-compute-instance)&nbsp;![File Count](https://img.shields.io/github/directory-file-count/subhamay-bhattacharyya-tf/terraform-google-compute-instance)&nbsp;![Issues](https://img.shields.io/github/issues/subhamay-bhattacharyya-tf/terraform-google-compute-instance)&nbsp;![Top Language](https://img.shields.io/github/languages/top/subhamay-bhattacharyya-tf/terraform-google-compute-instance)&nbsp;![Built with Claude Code](https://img.shields.io/badge/Built%20with-Claude%20Code-623CE4?logo=anthropic&logoColor=white)&nbsp;![Custom Endpoint](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/bsubhamay/476e6e7583432e960e6de16d5223e6a3/raw/terraform-google-compute-instance.json?)&nbsp;![Terraform Version](https://img.shields.io/badge/terraform-%3E%3D1.3-blue)&nbsp;![Provider Version](https://img.shields.io/badge/google-%3E%3D7.23-blue)
 
-A Terraform module for creating and managing a **Google Cloud Storage (GCS) bucket** on GCP.
+A Terraform module for creating and managing a **Google Compute Instance** on GCP.
+
+---
 
 ## Overview
 
-This module provisions a single `google_storage_bucket` resource via the `terraform-google-module-template` module. It accepts a small set of flat input variables and assembles the required `gcs_config` object, enforcing `uniform_bucket_level_access = true` and `public_access_prevention = "enforced"` by default.
+This module provisions a single `google_compute_instance` resource on Google Cloud Platform. It accepts one structured input variable (`compute_instance_config`) and exposes four outputs. The instance name is derived automatically from `project_code`, `base_name`, `zone`, and `environment` to enforce consistent naming across environments.
 
-## Requirements
-
-| Requirement | Version |
-|---|---|
-| Terraform | >= 1.3.0 |
-| Google Provider | >= 7.23.0 |
+---
 
 ## Usage
 
 ```hcl
-module "gcs_bucket" {
-  source = "github.com/subhamay-bhattacharyya-tf/terraform-google-module-template"
+module "compute_instance" {
+  source = "github.com/subhamay-bhattacharyya-tf/terraform-google-compute-instance"
 
-  bucket_name = "my-portfolio-bucket"
-  project_id  = "portfolio-site"
-  location    = "US"
-  environment = "prod"
+  environment  = "prod"
+  project_code = "myapp"
+
+  compute_instance_config = {
+    base_name    = "web-server"
+    machine_type = "e2-small"
+    zone         = "us-central1-a"
+
+    boot_disk = {
+      image = "debian-cloud/debian-11"
+      size  = 20
+      type  = "pd-balanced"
+    }
+
+    network_interface = {
+      network          = "default"
+      assign_public_ip = true
+    }
+
+    tags   = ["http-server", "https-server"]
+    labels = { env = "prod", team = "platform" }
+  }
 }
 ```
 
-## Input Variables
+---
+
+## Requirements
+
+| Name      | Version   |
+| --------- | --------- |
+| terraform | >= 1.3.0  |
+| google    | >= 7.23.0 |
+
+**Additional prerequisites:**
+
+- GCP credentials with `compute.instances.*` and `compute.disks.*` permissions
+- A GCP project with the Compute Engine API enabled
+- Workload Identity Federation or a service account key for CI/CD authentication
+
+---
+
+## Inputs
+
+<!-- AUTO-GENERATED by terraform-docs — do not edit manually -->
 
 | Name | Description | Type | Default | Required |
-|---|---|---|---|---|
-| `bucket_name` | Name of the GCS bucket | `string` | — | yes |
-| `project_id` | GCP project ID | `string` | `"portfolio-site"` | no |
-| `region` | GCP region | `string` | `"us-central1"` | no |
-| `location` | GCS bucket location | `string` | `"US"` | no |
-| `storage_class` | Storage class | `string` | `"STANDARD"` | no |
-| `force_destroy` | Force-destroy bucket on destroy | `bool` | `false` | no |
-| `versioning` | Enable object versioning | `bool` | `false` | no |
-| `labels` | Additional labels | `map(string)` | `{}` | no |
-| `project` | Project label value | `string` | `"portfolio-site"` | no |
-| `environment` | Environment label value | `string` | `"dev"` | no |
+| ---- | ----------- | ---- | ------- | :------: |
+| environment | Deployment environment (`devl`, `test`, `prod`) | `string` | n/a | **yes** |
+| project\_code | Short identifier used in resource naming | `string` | n/a | **yes** |
+| region | GCP region for the provider | `string` | `"us-central1"` | no |
+| compute\_instance\_config | Structured configuration object for the Compute Instance | `object({...})` | n/a | **yes** |
+
+### `compute_instance_config` object
+
+| Attribute | Type | Default | Required |
+| --------- | ---- | ------- | :------: |
+| `base_name` | `string` | n/a | **yes** |
+| `machine_type` | `string` | `"e2-micro"` | no |
+| `zone` | `string` | `"us-central1-a"` | no |
+| `boot_disk.image` | `string` | `"debian-cloud/debian-11"` | no |
+| `boot_disk.size` | `number` | `10` | no |
+| `boot_disk.type` | `string` | `"pd-standard"` | no |
+| `network_interface.network` | `string` | `"default"` | no |
+| `network_interface.subnetwork` | `string` | `null` | no |
+| `network_interface.assign_public_ip` | `bool` | `false` | no |
+| `labels` | `map(string)` | `{}` | no |
+| `metadata` | `map(string)` | `{}` | no |
+| `tags` | `list(string)` | `[]` | no |
+| `deletion_protection` | `bool` | `false` | no |
+| `allow_stopping_for_update` | `bool` | `true` | no |
+
+---
 
 ## Outputs
 
+<!-- AUTO-GENERATED by terraform-docs — do not edit manually -->
+
 | Name | Description |
-|---|---|
-| `bucket_id` | The ID of the GCS bucket |
-| `bucket_name` | The name of the GCS bucket |
-| `bucket_project` | The project ID where the bucket is created |
-| `bucket_location` | The location of the GCS bucket |
-| `bucket_url` | The URL of the GCS bucket |
-| `bucket_self_link` | The self link of the GCS bucket resource |
-| `bucket_storage_class` | The storage class of the GCS bucket |
-| `bucket_force_destroy` | Whether force_destroy is enabled |
+| ---- | ----------- |
+| instance\_id | The unique identifier of the Compute Instance |
+| instance\_name | The name of the Compute Instance |
+| self\_link | The URI of the Compute Instance |
+| instance\_ip | The internal IP address of the Compute Instance |
+
+---
+
+## Resources
+
+| Name | Type |
+| ---- | ---- |
+| [google_compute_instance.this](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance) | resource |
+
+---
+
+## Examples
+
+> Each example is a standalone, runnable Terraform configuration stored in
+> `examples/compute_instance/<name>/` with its own `README.md` and terraform validation.
+
+| Example | Description |
+| ------- | ----------- |
+| `basic/` | Minimal — all defaults (`e2-micro`, `pd-standard`, no public IP) |
+| `with-ssd/` | `pd-ssd` boot disk, 50 GB |
+| `with-public-ip/` | Ephemeral external IP via `access_config` |
+| `with-custom-image/` | Ubuntu 22.04 LTS boot image |
+| `with-container-optimized/` | Container-Optimized OS (COS) |
+| `with-n1-standard/` | `n1-standard-2` machine type |
+| `with-n2-standard/` | `n2-standard-2` machine type |
+| `with-tags/` | Network tags (`http-server`, `https-server`) |
+| `with-labels/` | Resource labels for cost allocation |
+| `with-metadata/` | Startup script via `metadata` |
+| `with-deletion-protection/` | `deletion_protection = true` |
+| `complete/` | All features combined |
+
+---
+
+## Notes & Caveats
+
+> **Destructive operation:** Destroying this module permanently deletes the
+> Compute Instance and its boot disk. Ensure `deletion_protection = false`
+> before running `terraform destroy` on protected instances.
+
+- Setting `deletion_protection = true` causes `terraform destroy` to fail. Set it to `false`, re-apply, then destroy.
+- Changing `machine_type` or `boot_disk.type` requires stopping the instance. Set `allow_stopping_for_update = true` to allow Terraform to handle this automatically.
+- `assign_public_ip = true` creates an ephemeral external IP. For a stable external IP, reserve a static address separately.
+- This module does not manage firewall rules — use `tags` to target existing VPC firewall rules.
+
+---
 
 ## CI / Workload Identity Federation Setup
 
-The Terratest job authenticates to GCP via [Workload Identity Federation](https://cloud.google.com/iam/docs/workload-identity-federation) (service account impersonation). If the job fails with `Permission 'iam.serviceAccounts.getAccessToken' denied`, grant the WIF pool principal the required IAM binding:
+The Terratest job authenticates to GCP via [Workload Identity Federation](https://cloud.google.com/iam/docs/workload-identity-federation). If the job fails with `Permission 'iam.serviceAccounts.getAccessToken' denied`, grant the WIF pool principal the required IAM binding:
 
 ```bash
 gcloud iam service-accounts add-iam-policy-binding \
-    "sa-17-cloud-storage@prj-17-cloud-storage-16748.iam.gserviceaccount.com" \
-    --project="prj-17-cloud-storage-16748" \
+    "<service-account-email>" \
+    --project="<gcp-project-id>" \
     --role="roles/iam.workloadIdentityUser" \
-    --member="principalSet://iam.googleapis.com/projects/578842011545/locations/global/workloadIdentityPools/github-actions/attribute.repository/subhamay-bhattacharyya-tf/terraform-google-module-template"
+    --member="principalSet://iam.googleapis.com/projects/<project-number>/locations/global/workloadIdentityPools/<pool-name>/attribute.repository/<github-org=>/terraform-google-compute-instance"
 ```
 
 The three repository variables required by the CI workflow are:
 
 | Variable | Description |
-| --- | --- |
+| -------- | ----------- |
 | `GCP_PROJECT_ID` | GCP project ID passed as `GOOGLE_CLOUD_PROJECT` to Terratest |
 | `GCP_WORKLOAD_IDENTITY_PROVIDER` | Full WIF provider resource name |
 | `GCP_SERVICE_ACCOUNT` | Service account email to impersonate |
 
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for full guidelines.
+
+```bash
+git clone git@github.com:subhamay-bhattacharyya-tf/terraform-google-compute-instance.git
+cd terraform-google-compute-instance
+terraform fmt -recursive
+terraform validate
+```
+
+1. Fork the repository and create a feature branch (`git checkout -b feat/add-gpu-support`)
+2. Run `terraform fmt`, `terraform validate`, and `terraform-docs .`
+3. Add or update tests under `test/` (Terratest)
+4. Open a pull request against `main` with a clear description of changes
+
+---
+
 ## License
 
-Apache 2.0 — see [LICENSE](LICENSE).
+MIT © 2026 Subhamay Bhattacharyya — see [LICENSE](LICENSE) for full terms.
